@@ -1,0 +1,20 @@
+[package]
+name = "washu"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+description = "A native, offline-first Japanese learning workstation"
+license = "GPL-3.0-or-later"
+
+[dependencies]
+adw = { package = "libadwaita", version = "0.8" }
+anyhow = "1.0"
+directories = "6.0"
+gtk = { package = "gtk4", version = "0.10" }
+serde = { version = "1.0", features = ["derive"] }
+sqlx = { version = "0.8", default-features = false, features = ["macros", "migrate", "runtime-tokio", "sqlite"] }
+tokio = { version = "1.0", features = ["rt-multi-thread"] }
+toml = "0.8"
+
+[dev-dependencies]
+tempfile = "3.0"
