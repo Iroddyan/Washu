@@ -126,6 +126,28 @@ pub fn build(state: AppState) -> gtk::Box {
         });
     }
     page.add_controller(controller);
+    {
+        let state = state.clone();
+        let card = card.clone();
+        let shown_at = shown_at.clone();
+        let expression = expression.clone();
+        let answer = answer.clone();
+        let reveal = reveal.clone();
+        let grades = grades.clone();
+        let status = status.clone();
+        page.connect_map(move |_| {
+            load_next(
+                &state,
+                &card,
+                &shown_at,
+                &expression,
+                &answer,
+                &reveal,
+                &grades,
+                &status,
+            );
+        });
+    }
     page
 }
 
