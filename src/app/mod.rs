@@ -1,8 +1,6 @@
 pub mod actions;
 pub mod state;
 
-use adw::prelude::*;
-
 use self::state::AppState;
 
 /// Initializes application services before constructing the user interface.

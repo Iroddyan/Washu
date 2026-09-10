@@ -1,5 +1,4 @@
 use adw::prelude::*;
-use gtk::prelude::*;
 
 use crate::{
     app::state::AppState,
@@ -27,7 +26,15 @@ pub fn build(application: &adw::Application, state: AppState) {
         .build();
 
     for (name, title) in DESTINATIONS {
-        stack.add_titled(&placeholder_page(title, &state), Some(name), title);
+        if name == "vocabulary" {
+            stack.add_titled(
+                &crate::ui::vocabulary::build(state.clone()),
+                Some(name),
+                title,
+            );
+        } else {
+            stack.add_titled(&placeholder_page(title, &state), Some(name), title);
+        }
     }
 
     let content = gtk::Box::builder()
@@ -78,8 +85,10 @@ pub fn build_error(application: &adw::Application, detail: &str) {
 fn placeholder_page(title: &str, state: &AppState) -> adw::StatusPage {
     let description = if title == "Home" {
         format!(
-            "Your learning workspace is ready. Data will be kept in {}.",
-            state.paths.data_dir().display()
+            "Your learning workspace is ready.\n\nData: {}\nConfiguration: {}\nCache: {}",
+            state.paths.data_dir().display(),
+            state.paths.config_dir().display(),
+            state.paths.cache_dir().display(),
         )
     } else {
         format!("{title} will be available in a later milestone.")

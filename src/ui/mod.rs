@@ -7,4 +7,4 @@ pub mod kanji {}
 pub mod reader {}
 pub mod review {}
 pub mod settings {}
-pub mod vocabulary {}
+pub mod vocabulary;

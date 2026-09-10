@@ -1,7 +1,9 @@
 use anyhow::Result;
+use std::sync::Arc;
+
 use tokio::runtime::Runtime;
 
-use crate::{database::Database, utils::AppPaths};
+use crate::{app::actions::AppActions, database::Database, utils::AppPaths};
 
 /// Services shared by application actions and UI presenters.
 ///
@@ -10,7 +12,7 @@ use crate::{database::Database, utils::AppPaths};
 #[derive(Clone)]
 pub struct AppState {
     pub paths: AppPaths,
-    pub database: Database,
+    pub actions: AppActions,
 }
 
 impl AppState {
@@ -18,9 +20,12 @@ impl AppState {
         let paths = AppPaths::discover()?;
         paths.ensure_directories()?;
 
-        let runtime = Runtime::new()?;
-        let database = runtime.block_on(Database::open(paths.database_file()))?;
+        let runtime = Arc::new(Runtime::new()?);
+        let database = runtime.block_on(Database::open(&paths.database_file()))?;
 
-        Ok(Self { paths, database })
+        Ok(Self {
+            paths,
+            actions: AppActions::new(database, runtime),
+        })
     }
 }

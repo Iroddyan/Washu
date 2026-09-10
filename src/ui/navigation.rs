@@ -1,5 +1,3 @@
-use gtk::prelude::*;
-
 pub const DESTINATIONS: [(&str, &str); 9] = [
     ("home", "Home"),
     ("learn", "Learn"),
