@@ -1,6 +1,7 @@
 mod app;
 mod database;
 mod domain;
+mod services;
 mod srs;
 mod ui;
 mod utils;

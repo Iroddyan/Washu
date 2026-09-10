@@ -35,6 +35,19 @@ impl Database {
     pub(crate) fn pool(&self) -> &SqlitePool {
         &self.pool
     }
+
+    /// Creates a transactionally consistent standalone SQLite snapshot.
+    pub async fn backup_to(&self, destination: &Path) -> Result<()> {
+        let destination = destination
+            .to_str()
+            .context("converting backup path to text")?;
+        let literal = destination.replace('\'', "''");
+        sqlx::query(&format!("VACUUM INTO '{literal}'"))
+            .execute(self.pool())
+            .await
+            .context("creating SQLite backup")?;
+        Ok(())
+    }
 }
 
 #[cfg(test)]

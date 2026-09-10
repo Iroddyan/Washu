@@ -1,3 +1,4 @@
+use std::path::PathBuf;
 use std::sync::Arc;
 
 use anyhow::Result;
@@ -7,6 +8,7 @@ use crate::{
     database::Database,
     domain::review::{DueVocabularyCard, ReviewSummary},
     domain::vocabulary::{Vocabulary, VocabularyInput},
+    services::backup::BackupService,
     srs::grading::ReviewGrade,
 };
 
@@ -18,12 +20,17 @@ use crate::{
 #[derive(Clone)]
 pub struct AppActions {
     database: Database,
+    backup_service: BackupService,
     runtime: Arc<Runtime>,
 }
 
 impl AppActions {
-    pub fn new(database: Database, runtime: Arc<Runtime>) -> Self {
-        Self { database, runtime }
+    pub fn new(database: Database, backup_service: BackupService, runtime: Arc<Runtime>) -> Self {
+        Self {
+            database,
+            backup_service,
+            runtime,
+        }
     }
 
     pub fn search_vocabulary(&self, search_term: &str) -> Result<Vec<Vocabulary>> {
@@ -61,5 +68,13 @@ impl AppActions {
 
     pub fn review_summary(&self) -> Result<ReviewSummary> {
         self.runtime.block_on(self.database.review_summary())
+    }
+
+    pub fn create_backup(&self) -> Result<PathBuf> {
+        self.runtime.block_on(self.backup_service.create_backup())
+    }
+
+    pub fn backups_dir(&self) -> &std::path::Path {
+        self.backup_service.backups_dir()
     }
 }

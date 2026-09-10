@@ -46,6 +46,13 @@ pub fn build(application: &adw::Application, state: AppState) {
                     title,
                 );
             }
+            "settings" => {
+                let _ = stack.add_titled(
+                    &crate::ui::settings::build(state.clone()),
+                    Some(name),
+                    title,
+                );
+            }
             _ => {
                 let _ = stack.add_titled(&placeholder_page(title, &state), Some(name), title);
             }
