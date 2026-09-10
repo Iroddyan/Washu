@@ -5,7 +5,9 @@ use tokio::runtime::Runtime;
 
 use crate::{
     database::Database,
+    domain::review::{DueVocabularyCard, ReviewSummary},
     domain::vocabulary::{Vocabulary, VocabularyInput},
+    srs::grading::ReviewGrade,
 };
 
 /// Synchronous application commands used by the current GTK presentation.
@@ -41,5 +43,23 @@ impl AppActions {
 
     pub fn delete_vocabulary(&self, id: i64) -> Result<bool> {
         self.runtime.block_on(self.database.delete_vocabulary(id))
+    }
+
+    pub fn next_due_vocabulary(&self) -> Result<Option<DueVocabularyCard>> {
+        self.runtime.block_on(self.database.next_due_vocabulary())
+    }
+
+    pub fn grade_vocabulary(
+        &self,
+        card: &DueVocabularyCard,
+        grade: ReviewGrade,
+        response_ms: Option<i64>,
+    ) -> Result<()> {
+        self.runtime
+            .block_on(self.database.grade_vocabulary(card, grade, response_ms))
+    }
+
+    pub fn review_summary(&self) -> Result<ReviewSummary> {
+        self.runtime.block_on(self.database.review_summary())
     }
 }

@@ -37,6 +37,15 @@ impl Database {
         .await
         .context("creating vocabulary")?;
 
+        sqlx::query(
+            "INSERT INTO user_vocabulary (vocabulary_id, status, due_at) \
+             VALUES (?1, 'new', CURRENT_TIMESTAMP)",
+        )
+        .bind(result.last_insert_rowid())
+        .execute(self.pool())
+        .await
+        .context("initializing vocabulary learning state")?;
+
         self.vocabulary_by_id(result.last_insert_rowid()).await
     }
 

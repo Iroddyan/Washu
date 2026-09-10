@@ -25,15 +25,30 @@ pub fn build(application: &adw::Application, state: AppState) {
         .transition_duration(150)
         .build();
 
+    let review_page = crate::ui::review::build(state.clone());
+    let home_page = crate::ui::dashboard::build(state.clone(), {
+        let stack = stack.clone();
+        move || stack.set_visible_child_name("review")
+    });
+
     for (name, title) in DESTINATIONS {
-        if name == "vocabulary" {
-            stack.add_titled(
-                &crate::ui::vocabulary::build(state.clone()),
-                Some(name),
-                title,
-            );
-        } else {
-            stack.add_titled(&placeholder_page(title, &state), Some(name), title);
+        match name {
+            "home" => {
+                let _ = stack.add_titled(&home_page, Some(name), title);
+            }
+            "review" => {
+                let _ = stack.add_titled(&review_page, Some(name), title);
+            }
+            "vocabulary" => {
+                let _ = stack.add_titled(
+                    &crate::ui::vocabulary::build(state.clone()),
+                    Some(name),
+                    title,
+                );
+            }
+            _ => {
+                let _ = stack.add_titled(&placeholder_page(title, &state), Some(name), title);
+            }
         }
     }
 
