@@ -140,4 +140,57 @@ mod tests {
         assert_eq!(reviews.get::<i64, _>("rating"), 3);
         assert_eq!(reviews.get::<i64, _>("response_ms"), 825);
     }
+
+    #[tokio::test]
+    async fn graded_review_and_home_summary_survive_a_database_restart() {
+        let directory = tempfile::tempdir().expect("create temporary directory");
+        let database_path = directory.path().join("washu.db");
+        let database = Database::open(&database_path).await.expect("open database");
+        database
+            .create_vocabulary(VocabularyInput {
+                expression: "犬".into(),
+                meaning: "dog".into(),
+                ..Default::default()
+            })
+            .await
+            .expect("create entry");
+        let card = database
+            .next_due_vocabulary()
+            .await
+            .expect("load due card")
+            .expect("card should be due");
+        database
+            .grade_vocabulary(&card, ReviewGrade::Good, Some(612))
+            .await
+            .expect("grade card");
+        database.pool().close().await;
+
+        let restarted = Database::open(&database_path)
+            .await
+            .expect("restart database");
+        assert!(
+            restarted
+                .next_due_vocabulary()
+                .await
+                .expect("load next card after restart")
+                .is_none()
+        );
+
+        let summary = restarted.review_summary().await.expect("load home summary");
+        assert_eq!(summary.due_count, 0);
+        assert_eq!(summary.new_count, 0);
+        assert_eq!(summary.learned_count, 1);
+        assert_eq!(summary.reviewed_today, 1);
+
+        let review =
+            sqlx::query("SELECT item_type, item_id, direction, rating, response_ms FROM reviews")
+                .fetch_one(restarted.pool())
+                .await
+                .expect("load persisted review");
+        assert_eq!(review.get::<String, _>("item_type"), "vocabulary");
+        assert_eq!(review.get::<i64, _>("item_id"), card.vocabulary_id);
+        assert_eq!(review.get::<String, _>("direction"), "recognition");
+        assert_eq!(review.get::<i64, _>("rating"), 3);
+        assert_eq!(review.get::<i64, _>("response_ms"), 612);
+    }
 }

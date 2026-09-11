@@ -43,7 +43,12 @@ impl BackupService {
 
 #[cfg(test)]
 mod tests {
-    use crate::{database::Database, domain::vocabulary::VocabularyInput, utils::AppPaths};
+    use sqlx::Row;
+
+    use crate::{
+        database::Database, domain::vocabulary::VocabularyInput, srs::grading::ReviewGrade,
+        utils::AppPaths,
+    };
 
     use super::BackupService;
 
@@ -63,6 +68,15 @@ mod tests {
             })
             .await
             .expect("create vocabulary");
+        let card = database
+            .next_due_vocabulary()
+            .await
+            .expect("load due card")
+            .expect("card should be due");
+        database
+            .grade_vocabulary(&card, ReviewGrade::Good, Some(451))
+            .await
+            .expect("grade card");
 
         let backup = BackupService::new(database, &paths)
             .create_backup()
@@ -71,5 +85,20 @@ mod tests {
         let snapshot = Database::open(&backup).await.expect("open backup");
 
         assert_eq!(snapshot.search_vocabulary("猫").await.unwrap().len(), 1);
+        let summary = snapshot
+            .review_summary()
+            .await
+            .expect("load backup summary");
+        assert_eq!(summary.learned_count, 1);
+        assert_eq!(summary.reviewed_today, 1);
+
+        let review = sqlx::query("SELECT item_type, item_id, rating, response_ms FROM reviews")
+            .fetch_one(snapshot.pool())
+            .await
+            .expect("load review from backup");
+        assert_eq!(review.get::<String, _>("item_type"), "vocabulary");
+        assert_eq!(review.get::<i64, _>("item_id"), card.vocabulary_id);
+        assert_eq!(review.get::<i64, _>("rating"), 3);
+        assert_eq!(review.get::<i64, _>("response_ms"), 451);
     }
 }

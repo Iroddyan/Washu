@@ -57,11 +57,15 @@ mod tests {
     use super::Database;
 
     #[tokio::test]
-    async fn opening_a_database_applies_the_initial_schema() {
+    async fn reopening_a_database_keeps_the_initial_schema_applied_once() {
         let directory = tempfile::tempdir().expect("create temporary directory");
-        let database = Database::open(&directory.path().join("washu.db"))
+        let database_path = directory.path().join("washu.db");
+        let database = Database::open(&database_path).await.expect("open database");
+        database.pool().close().await;
+
+        let database = Database::open(&database_path)
             .await
-            .expect("open database");
+            .expect("reopen database");
 
         let row = sqlx::query(
             "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'vocabulary'",
@@ -71,5 +75,11 @@ mod tests {
         .expect("query schema");
 
         assert_eq!(row.get::<String, _>("name"), "vocabulary");
+
+        let migrations = sqlx::query("SELECT COUNT(*) AS count FROM _sqlx_migrations")
+            .fetch_one(database.pool())
+            .await
+            .expect("query migration history");
+        assert_eq!(migrations.get::<i64, _>("count"), 1);
     }
 }
