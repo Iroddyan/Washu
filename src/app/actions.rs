@@ -6,6 +6,7 @@ use tokio::runtime::Runtime;
 
 use crate::{
     database::Database,
+    domain::kanji::{Kanji, KanjiInput},
     domain::review::{DueVocabularyCard, ReviewSummary},
     domain::vocabulary::{Vocabulary, VocabularyInput},
     services::backup::BackupService,
@@ -24,6 +25,10 @@ pub struct AppActions {
     runtime: Arc<Runtime>,
 }
 
+#[expect(
+    dead_code,
+    reason = "Kanji actions are introduced ahead of their Milestone 2 browser/editor consumer."
+)]
 impl AppActions {
     pub fn new(database: Database, backup_service: BackupService, runtime: Arc<Runtime>) -> Self {
         Self {
@@ -50,6 +55,47 @@ impl AppActions {
 
     pub fn delete_vocabulary(&self, id: i64) -> Result<bool> {
         self.runtime.block_on(self.database.delete_vocabulary(id))
+    }
+
+    pub fn search_kanji(&self, search_term: &str, jlpt_level: Option<&str>) -> Result<Vec<Kanji>> {
+        self.runtime
+            .block_on(self.database.search_kanji(search_term, jlpt_level))
+    }
+
+    pub fn create_kanji(&self, input: KanjiInput) -> Result<Kanji> {
+        self.runtime.block_on(self.database.create_kanji(input))
+    }
+
+    pub fn update_kanji(&self, id: i64, input: KanjiInput) -> Result<Kanji> {
+        self.runtime.block_on(self.database.update_kanji(id, input))
+    }
+
+    pub fn delete_kanji(&self, id: i64) -> Result<bool> {
+        self.runtime.block_on(self.database.delete_kanji(id))
+    }
+
+    pub fn attach_kanji_to_vocabulary(&self, kanji_id: i64, vocabulary_id: i64) -> Result<()> {
+        self.runtime.block_on(
+            self.database
+                .attach_kanji_to_vocabulary(kanji_id, vocabulary_id),
+        )
+    }
+
+    pub fn detach_kanji_from_vocabulary(&self, kanji_id: i64, vocabulary_id: i64) -> Result<bool> {
+        self.runtime.block_on(
+            self.database
+                .detach_kanji_from_vocabulary(kanji_id, vocabulary_id),
+        )
+    }
+
+    pub fn vocabulary_for_kanji(&self, kanji_id: i64) -> Result<Vec<Vocabulary>> {
+        self.runtime
+            .block_on(self.database.vocabulary_for_kanji(kanji_id))
+    }
+
+    pub fn kanji_for_vocabulary(&self, vocabulary_id: i64) -> Result<Vec<Kanji>> {
+        self.runtime
+            .block_on(self.database.kanji_for_vocabulary(vocabulary_id))
     }
 
     pub fn next_due_vocabulary(&self) -> Result<Option<DueVocabularyCard>> {
